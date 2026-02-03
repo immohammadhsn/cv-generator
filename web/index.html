@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CV Generator</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="hero__badge">CV Generator</div>
+        <h1>Tailor your CV to a specific role in minutes.</h1>
+        <p class="hero__lead">
+          Paste the job offer URL, upload your skills file, and receive an ATS-friendly PDF.
+        </p>
+      </section>
+
+      <section class="card">
+        <form id="cv-form" class="form">
+          <label class="field">
+            <span>Job offer URL</span>
+            <input
+              type="url"
+              name="job_url"
+              id="job_url"
+              placeholder="https://company.com/jobs/role"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span>Skills file</span>
+            <input
+              type="file"
+              name="skills_file"
+              accept=".pdf,.docx,.md,.json,.txt"
+              required
+            />
+            <small>Accepted: PDF, DOCX, MD, JSON, TXT</small>
+          </label>
+
+          <div class="form__actions">
+            <button type="button" class="btn btn--ghost" id="preview-btn">Preview Job Offer</button>
+            <button type="submit" class="btn">Generate CV</button>
+          </div>
+        </form>
+
+        <div id="status" class="status" aria-live="polite"></div>
+
+        <div id="result" class="result" hidden>
+          <p class="result__title">Your CV is ready.</p>
+          <a id="download" class="btn btn--ghost" href="#" aria-disabled="true">Download PDF</a>
+        </div>
+
+        <div id="preview" class="preview" hidden>
+          <p class="preview__title">Job offer preview</p>
+          <pre id="preview-text" class="preview__content"></pre>
+        </div>
+      </section>
+
+      <section class="steps">
+        <div class="step">
+          <h3>1. Provide a job link</h3>
+          <p>We extract the job title and description to target the CV.</p>
+        </div>
+        <div class="step">
+          <h3>2. Upload skills</h3>
+          <p>Your file powers the tailored summary, skills, and experience.</p>
+        </div>
+        <div class="step">
+          <h3>3. Download the PDF</h3>
+          <p>Get a ready-to-use, ATS-friendly CV in seconds.</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>
