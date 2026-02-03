@@ -130,8 +130,14 @@ def download_head(filename: str) -> FileResponse:
 
 @app.post("/api/preview")
 def preview(job_request: JobRequest = Depends(JobRequest.as_form)) -> dict:
-    job_text = scrape_job(job_request.job_url)
-    return {"job_text": job_text}
+    try:
+        job_text = scrape_job(job_request.job_url)
+        return {"job_text": job_text}
+    except SystemExit:
+        raise HTTPException(
+            status_code=400,
+            detail="Failed to fetch job offer preview. The URL may require login or block scraping.",
+        )
 
 
 @app.get("/api/dev-assets-hash")
