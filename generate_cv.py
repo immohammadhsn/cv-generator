@@ -3,15 +3,10 @@ import sys
 import os
 import requests
 from bs4 import BeautifulSoup
+import subprocess
 import json
 from pathlib import Path
 from dotenv import load_dotenv
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from reportlab.pdfgen import canvas
 
 # Load environment variables
 load_dotenv()
@@ -68,7 +63,7 @@ def generate_cv_with_groq(job_desc, skills):
     
     print("Generating CV with Groq AI...")
     
-    prompt = f"""You are an expert CV writer. Analyze the job description carefully and create a TAILORED CV that highlights the candidate's most relevant skills and experience for THIS SPECIFIC JOB.
+    prompt = f"""You are an expert CV writer and LaTeX specialist. Create a professional, ATS-friendly CV in LaTeX format.
 
 JOB DESCRIPTION:
 {job_desc[:4000]}
@@ -76,57 +71,24 @@ JOB DESCRIPTION:
 CANDIDATE INFORMATION:
 {skills}
 
-CRITICAL INSTRUCTIONS:
-1. READ the job description carefully and identify the TOP 5 key requirements
-2. REORDER and EMPHASIZE the candidate's experience to match those requirements
-3. ONLY include skills that are relevant to this job (not every skill the candidate has)
-4. REWRITE achievement bullet points to use similar language and keywords from the job posting
-5. Put the most relevant work experience FIRST, even if it's not chronological
-6. If the job emphasizes certain technologies or skills, make sure they appear prominently
-7. The professional summary must directly address what this specific job is looking for
-8. Each achievement should tie back to a requirement in the job description
-
-EXAMPLE OF GOOD TAILORING:
-- If job wants "Python" and "machine learning", put those skills at the TOP of skills list
-- If job wants "team leadership", emphasize leadership achievements in experience
-- If job mentions "microservices", use that exact term in relevant experience bullets
-- Mirror the job posting's language and terminology
+INSTRUCTIONS:
+1. Analyze the job description and identify key requirements
+2. Tailor the CV to highlight relevant skills and experience from the candidate's information
+3. Use a clean, professional LaTeX template (moderncv or similar)
+4. Include these sections: Contact Info, Professional Summary, Skills, Work Experience, Education, Projects
+5. Emphasize achievements that match job requirements
+6. Use action verbs and quantifiable results
+7. Keep it to 1-2 pages maximum
+8. Make it ATS-friendly (avoid complex formatting, use standard section names)
 
 OUTPUT REQUIREMENTS:
-Return ONLY valid JSON in this exact structure (no markdown, no explanations):
-{{
-  "name": "Full Name",
-  "email": "email@example.com",
-  "phone": "+20 123 456 7890",
-  "location": "City, Country",
-  "linkedin": "linkedin.com/in/profile",
-  "github": "github.com/username",
-  "summary": "2-3 sentence professional summary that directly addresses THIS job's requirements using keywords from the posting",
-  "skills": ["List ONLY the 8-12 most relevant skills for THIS job, ordered by relevance"],
-  "experience": [
-    {{
-      "title": "Job Title",
-      "company": "Company Name",
-      "period": "Month Year - Month Year",
-      "achievements": ["Rewritten achievement that matches job requirements", "Another achievement using job posting keywords"]
-    }}
-  ],
-  "education": [
-    {{
-      "degree": "Degree Name",
-      "institution": "University Name",
-      "year": "Year"
-    }}
-  ],
-  "projects": [
-    {{
-      "name": "Project Name (only include if relevant to THIS job)",
-      "description": "Description highlighting relevant technologies mentioned in job posting"
-    }}
-  ]
-}}
+- Return ONLY the complete LaTeX code
+- Start with \\documentclass and end with \\end{{document}}
+- Use the moderncv package or a clean article-based template
+- Include all necessary packages
+- Ensure the document compiles without errors
+- Do NOT include any explanations or markdown, ONLY LaTeX code"""
 
-REMEMBER: This CV should look DIFFERENT for each job posting. Tailor everything!"""
     try:
         response = requests.post(
             'https://api.groq.com/openai/v1/chat/completions',
@@ -139,7 +101,7 @@ REMEMBER: This CV should look DIFFERENT for each job posting. Tailor everything!
                 'messages': [
                     {
                         'role': 'system',
-                        'content': 'You are an expert CV writer. You create professional, ATS-friendly CVs tailored to job descriptions. Always respond with valid JSON only.'
+                        'content': 'You are an expert CV writer specializing in LaTeX document generation. You create professional, ATS-friendly CVs tailored to job descriptions.'
                     },
                     {
                         'role': 'user',
@@ -155,16 +117,13 @@ REMEMBER: This CV should look DIFFERENT for each job posting. Tailor everything!
         response.raise_for_status()
         result = response.json()
         
-        content = result['choices'][0]['message']['content']
+        latex_content = result['choices'][0]['message']['content']
         
         # Clean up the response - remove markdown code blocks if present
-        content = content.replace('```json', '').replace('```', '').strip()
+        latex_content = latex_content.replace('```latex', '').replace('```', '').strip()
         
-        # Parse JSON
-        cv_data = json.loads(content)
-        
-        print(f"Generated CV data successfully")
-        return cv_data
+        print(f"Generated {len(latex_content)} characters of LaTeX code")
+        return latex_content
         
     except Exception as e:
         print(f"Error calling Groq API: {e}")
@@ -172,123 +131,57 @@ REMEMBER: This CV should look DIFFERENT for each job posting. Tailor everything!
             print(f"Response: {e.response.text}")
         sys.exit(1)
 
-def create_pdf(cv_data, output_dir):
-    """Create PDF from CV data"""
+def compile_latex(latex_content, output_dir):
+    """Compile LaTeX to PDF"""
     try:
         # Create output directory if it doesn't exist
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
+        tex_file = os.path.join(output_dir, "cv.tex")
         pdf_file = os.path.join(output_dir, "cv.pdf")
         
-        print("Creating PDF...")
+        # Write LaTeX content to file
+        with open(tex_file, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
         
-        # Create PDF
-        doc = SimpleDocTemplate(pdf_file, pagesize=letter,
-                              topMargin=0.5*inch, bottomMargin=0.5*inch,
-                              leftMargin=0.75*inch, rightMargin=0.75*inch)
+        print(f"Saved LaTeX file: {tex_file}")
         
-        # Container for PDF elements
-        elements = []
-        
-        # Define styles
-        styles = getSampleStyleSheet()
-        
-        # Custom styles
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=24,
-            textColor='#2C3E50',
-            spaceAfter=6,
-            alignment=TA_CENTER
+        # Compile LaTeX to PDF
+        print("Compiling LaTeX to PDF...")
+        result = subprocess.run(
+            ['pdflatex', '-interaction=nonstopmode', '-output-directory', output_dir, tex_file],
+            capture_output=True,
+            text=True,
+            timeout=30
         )
         
-        contact_style = ParagraphStyle(
-            'Contact',
-            parent=styles['Normal'],
-            fontSize=10,
-            alignment=TA_CENTER,
-            spaceAfter=12
+        # Run twice to resolve references
+        subprocess.run(
+            ['pdflatex', '-interaction=nonstopmode', '-output-directory', output_dir, tex_file],
+            capture_output=True,
+            text=True,
+            timeout=30
         )
         
-        heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor='#2C3E50',
-            spaceAfter=6,
-            spaceBefore=12,
-            borderWidth=1,
-            borderColor='#2C3E50',
-            borderPadding=5
-        )
-        
-        body_style = styles['Normal']
-        body_style.fontSize = 10
-        body_style.spaceAfter = 6
-        
-        # Add name
-        elements.append(Paragraph(cv_data['name'], title_style))
-        
-        # Add contact info
-        contact_info = f"{cv_data['email']} | {cv_data['phone']} | {cv_data['location']}"
-        if cv_data.get('linkedin'):
-            contact_info += f"<br/>{cv_data['linkedin']}"
-        if cv_data.get('github'):
-            contact_info += f" | {cv_data['github']}"
-        elements.append(Paragraph(contact_info, contact_style))
-        
-        elements.append(Spacer(1, 0.2*inch))
-        
-        # Professional Summary
-        elements.append(Paragraph("PROFESSIONAL SUMMARY", heading_style))
-        elements.append(Paragraph(cv_data['summary'], body_style))
-        elements.append(Spacer(1, 0.1*inch))
-        
-        # Skills
-        if cv_data.get('skills'):
-            elements.append(Paragraph("SKILLS", heading_style))
-            skills_text = " • ".join(cv_data['skills'])
-            elements.append(Paragraph(skills_text, body_style))
-            elements.append(Spacer(1, 0.1*inch))
-        
-        # Work Experience
-        if cv_data.get('experience'):
-            elements.append(Paragraph("WORK EXPERIENCE", heading_style))
-            for exp in cv_data['experience']:
-                job_title = f"<b>{exp['title']}</b> - {exp['company']}"
-                elements.append(Paragraph(job_title, body_style))
-                elements.append(Paragraph(f"<i>{exp['period']}</i>", body_style))
-                for achievement in exp['achievements']:
-                    elements.append(Paragraph(f"• {achievement}", body_style))
-                elements.append(Spacer(1, 0.1*inch))
-        
-        # Education
-        if cv_data.get('education'):
-            elements.append(Paragraph("EDUCATION", heading_style))
-            for edu in cv_data['education']:
-                edu_text = f"<b>{edu['degree']}</b> - {edu['institution']}, {edu['year']}"
-                elements.append(Paragraph(edu_text, body_style))
-            elements.append(Spacer(1, 0.1*inch))
-        
-        # Projects
-        if cv_data.get('projects'):
-            elements.append(Paragraph("PROJECTS", heading_style))
-            for project in cv_data['projects']:
-                project_text = f"<b>{project['name']}</b>: {project['description']}"
-                elements.append(Paragraph(project_text, body_style))
-            elements.append(Spacer(1, 0.1*inch))
-        
-        # Build PDF
-        doc.build(elements)
-        
-        print(f"✓ PDF successfully generated: {pdf_file}")
-        return pdf_file
-        
+        if os.path.exists(pdf_file):
+            print(f"✓ PDF successfully generated: {pdf_file}")
+            
+            # Clean up auxiliary files
+            for ext in ['.aux', '.log', '.out']:
+                aux_file = os.path.join(output_dir, f"cv{ext}")
+                if os.path.exists(aux_file):
+                    os.remove(aux_file)
+        else:
+            print("Error: PDF compilation failed")
+            print("LaTeX output:", result.stdout)
+            print("LaTeX errors:", result.stderr)
+            sys.exit(1)
+            
+    except subprocess.TimeoutExpired:
+        print("Error: LaTeX compilation timed out")
+        sys.exit(1)
     except Exception as e:
-        print(f"Error creating PDF: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Error compiling LaTeX: {e}")
         sys.exit(1)
 
 def main():
@@ -312,14 +205,15 @@ def main():
     skills = load_skills(skills_file)
     
     # Step 3: Generate CV with AI
-    cv_data = generate_cv_with_groq(job_desc, skills)
+    latex_cv = generate_cv_with_groq(job_desc, skills)
     
-    # Step 4: Create PDF
-    pdf_path = create_pdf(cv_data, output_dir)
+    # Step 4: Compile to PDF
+    compile_latex(latex_cv, output_dir)
     
     print("=" * 60)
     print("✓ CV GENERATION COMPLETE!")
-    print(f"✓ PDF file: {pdf_path}")
+    print(f"✓ LaTeX file: {output_dir}/cv.tex")
+    print(f"✓ PDF file: {output_dir}/cv.pdf")
     print("=" * 60)
 
 if __name__ == "__main__":
