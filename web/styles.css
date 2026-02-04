@@ -17,6 +17,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
@@ -126,6 +130,11 @@ body {
   cursor: pointer;
   transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
   box-shadow: 0 12px 24px rgba(184, 140, 255, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
 }
 
 .btn:hover {
@@ -145,6 +154,29 @@ body {
   pointer-events: none;
   opacity: 0.5;
   filter: grayscale(0.2);
+}
+
+.btn__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(26, 22, 41, 0.4);
+  border-top-color: rgba(26, 22, 41, 0.9);
+  display: none;
+  animation: spin 800ms linear infinite;
+}
+
+.btn.btn--ghost .btn__spinner {
+  border-color: rgba(184, 140, 255, 0.25);
+  border-top-color: var(--accent);
+}
+
+.btn.is-loading .btn__spinner {
+  display: inline-block;
+}
+
+.btn.is-loading .btn__label {
+  opacity: 0.7;
 }
 
 .status {
@@ -190,6 +222,58 @@ body {
   font-weight: 600;
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 20;
+}
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 10, 20, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.modal__content {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(140deg, rgba(30, 27, 45, 0.95), rgba(24, 22, 38, 0.98));
+  border-radius: 22px;
+  padding: 26px;
+  width: min(420px, 92vw);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(184, 140, 255, 0.25);
+  display: grid;
+  gap: 12px;
+  animation: floatIn 500ms ease;
+}
+
+.modal__badge {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-strong);
+}
+
+.modal__lead {
+  margin: 0;
+  color: var(--muted);
+}
+
+.modal__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.modal__actions .btn {
+  width: 100%;
+}
+
 .steps {
   display: grid;
   gap: 16px;
@@ -233,6 +317,15 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 

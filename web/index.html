@@ -41,17 +41,20 @@
           </label>
 
           <div class="form__actions">
-            <button type="button" class="btn btn--ghost" id="preview-btn">Preview Job Offer</button>
-            <button type="submit" class="btn">Generate CV</button>
+            <button type="button" class="btn btn--ghost" id="preview-btn">
+              <span class="btn__label">Preview Job Offer</span>
+              <span class="btn__spinner" aria-hidden="true"></span>
+            </button>
+            <button type="submit" class="btn" id="generate-btn">
+              <span class="btn__label">Generate CV</span>
+              <span class="btn__spinner" aria-hidden="true"></span>
+            </button>
           </div>
         </form>
 
         <div id="status" class="status" aria-live="polite"></div>
 
-        <div id="result" class="result" hidden>
-          <p class="result__title">Your CV is ready.</p>
-          <a id="download" class="btn btn--ghost" href="#" aria-disabled="true">Download PDF</a>
-        </div>
+        <div id="result" class="result" hidden></div>
 
         <div id="preview" class="preview" hidden>
           <p class="preview__title">Job offer preview</p>
@@ -74,6 +77,19 @@
         </div>
       </section>
     </main>
+
+    <div id="modal" class="modal" hidden aria-hidden="true">
+      <div class="modal__backdrop" data-close="true"></div>
+      <div class="modal__content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal__badge">Success</div>
+        <h2 id="modal-title">Your CV is generated.</h2>
+        <p class="modal__lead">Download your tailored PDF and start applying.</p>
+        <div class="modal__actions">
+          <a id="download" class="btn" href="#" aria-disabled="true">Download PDF</a>
+          <button type="button" class="btn btn--ghost" id="modal-close">Close</button>
+        </div>
+      </div>
+    </div>
 
     <script src="/assets/app.js"></script>
   </body>
