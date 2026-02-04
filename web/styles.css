@@ -202,19 +202,68 @@ body {
   border: 1px solid rgba(184, 140, 255, 0.2);
 }
 
+.preview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview__title-block {
+  display: grid;
+  gap: 4px;
+}
+
 .preview__title {
   margin: 0;
   font-weight: 600;
+}
+
+.preview__job-title {
+  margin: 0;
+  font-size: 14px;
+  color: var(--accent-strong);
+  letter-spacing: 0.02em;
 }
 
 .preview__content {
   margin: 0;
   max-height: 220px;
   overflow: auto;
-  white-space: pre-wrap;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
   font-size: 14px;
   color: var(--muted);
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.preview__content li {
+  position: relative;
+  padding: 12px 14px 12px 34px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(184, 140, 255, 0.12), rgba(184, 140, 255, 0.02));
+  border: 1px solid rgba(184, 140, 255, 0.18);
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.preview.is-loading .preview__content li {
+  color: var(--muted);
+  background: rgba(184, 140, 255, 0.08);
+  border-style: dashed;
+}
+
+
+.preview__content li::before {
+  content: "-";
+  position: absolute;
+  left: 14px;
+  top: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-strong);
 }
 
 .result__title {

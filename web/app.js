@@ -5,10 +5,11 @@ const downloadEl = document.getElementById("download");
 const modalEl = document.getElementById("modal");
 const modalCloseBtn = document.getElementById("modal-close");
 const generateBtn = document.getElementById("generate-btn");
-const previewBtn = document.getElementById("preview-btn");
 const previewEl = document.getElementById("preview");
 const previewTextEl = document.getElementById("preview-text");
+const previewJobTitleEl = document.getElementById("preview-job-title");
 const jobUrlInput = document.getElementById("job_url");
+let autoPreviewTimer = null;
 
 const setStatus = (message) => {
   statusEl.textContent = message;
@@ -16,6 +17,63 @@ const setStatus = (message) => {
 
 const setPreviewVisible = (visible) => {
   previewEl.hidden = !visible;
+};
+
+const setPreviewLoading = (isLoading) => {
+  if (!previewEl) {
+    return;
+  }
+  if (isLoading) {
+    previewEl.classList.add("is-loading");
+    previewEl.setAttribute("aria-busy", "true");
+  } else {
+    previewEl.classList.remove("is-loading");
+    previewEl.removeAttribute("aria-busy");
+  }
+};
+
+const normalizePreviewItems = (rawText) => {
+  const normalized = (rawText || "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) {
+    return [];
+  }
+
+  let lines = normalized
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/^[-*•\u2022]\s+/, ""));
+
+  if (lines.length === 1) {
+    lines = normalized
+      .split(/(?<=[.!?])\s+/)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+  }
+
+  return lines;
+};
+
+const renderPreviewList = (items) => {
+  previewTextEl.innerHTML = "";
+  const listItems = items.length ? items : ["No content extracted."];
+
+  const fragment = document.createDocumentFragment();
+  listItems.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    fragment.appendChild(li);
+  });
+  previewTextEl.appendChild(fragment);
+
+};
+
+const renderPreviewJobTitle = (title) => {
+  if (!previewJobTitleEl) {
+    return;
+  }
+  const safeTitle = title && title.trim() ? title.trim() : "Job title not detected";
+  previewJobTitleEl.textContent = safeTitle;
 };
 
 const setModalVisible = (visible) => {
@@ -63,8 +121,11 @@ const fetchPreview = async () => {
     return;
   }
 
-  setStatus("Fetching job offer preview...");
-  setPreviewVisible(false);
+  setStatus("Extracting job requirements...");
+  setPreviewVisible(true);
+  setPreviewLoading(true);
+  renderPreviewJobTitle("Extracting job title...");
+  renderPreviewList(["Loading requirements from the job posting..."]);
 
   const formData = new FormData();
   formData.append("job_url", jobUrl);
@@ -90,8 +151,14 @@ const fetchPreview = async () => {
   }
 
   const data = await response.json();
-  previewTextEl.textContent = data.job_text || "No content extracted.";
+  const rawRequirements = Array.isArray(data.requirements)
+    ? data.requirements.join("\n")
+    : data.job_text || "";
+  renderPreviewJobTitle(data.job_title || "");
+  const items = normalizePreviewItems(rawRequirements);
+  renderPreviewList(items);
   setPreviewVisible(true);
+  setPreviewLoading(false);
   setStatus("Preview updated.");
 };
 
@@ -169,20 +236,42 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-previewBtn.addEventListener("click", async () => {
-  setButtonLoading(previewBtn, true);
-  try {
-    await fetchPreview();
-  } catch (error) {
-    const message = error?.message
-      ? `Preview failed: ${error.message}`
-      : "Preview failed. Please check the job URL.";
-    setStatus(message);
-    setPreviewVisible(false);
-  } finally {
-    setButtonLoading(previewBtn, false);
+const scheduleAutoPreview = () => {
+  if (!jobUrlInput) {
+    return;
   }
-});
+
+  const jobUrl = jobUrlInput.value.trim();
+  if (!jobUrl) {
+    setPreviewVisible(false);
+    return;
+  }
+
+  if (!jobUrlInput.checkValidity()) {
+    return;
+  }
+
+  if (autoPreviewTimer) {
+    clearTimeout(autoPreviewTimer);
+  }
+
+  autoPreviewTimer = setTimeout(async () => {
+    try {
+      await fetchPreview();
+    } catch (error) {
+      const message = error?.message
+        ? `Preview failed: ${error.message}`
+        : "Preview failed. Please check the job URL.";
+      setStatus(message);
+      setPreviewVisible(false);
+      setPreviewLoading(false);
+    }
+  }, 650);
+};
+
+jobUrlInput.addEventListener("input", scheduleAutoPreview);
+jobUrlInput.addEventListener("change", scheduleAutoPreview);
+jobUrlInput.addEventListener("blur", scheduleAutoPreview);
 
 modalCloseBtn.addEventListener("click", () => {
   clearGeneratedCvState();

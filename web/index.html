@@ -40,11 +40,17 @@
             <small>Accepted: PDF, DOCX, MD, JSON, TXT</small>
           </label>
 
+          <div id="preview" class="preview" hidden>
+            <div class="preview__header">
+              <div class="preview__title-block">
+                <p class="preview__title">Job requirements preview</p>
+                <p class="preview__job-title" id="preview-job-title">Job title will appear here</p>
+              </div>
+            </div>
+            <ul id="preview-text" class="preview__content" role="list"></ul>
+          </div>
+
           <div class="form__actions">
-            <button type="button" class="btn btn--ghost" id="preview-btn">
-              <span class="btn__label">Preview Job Offer</span>
-              <span class="btn__spinner" aria-hidden="true"></span>
-            </button>
             <button type="submit" class="btn" id="generate-btn">
               <span class="btn__label">Generate CV</span>
               <span class="btn__spinner" aria-hidden="true"></span>
@@ -55,11 +61,6 @@
         <div id="status" class="status" aria-live="polite"></div>
 
         <div id="result" class="result" hidden></div>
-
-        <div id="preview" class="preview" hidden>
-          <p class="preview__title">Job offer preview</p>
-          <pre id="preview-text" class="preview__content"></pre>
-        </div>
       </section>
 
       <section class="steps">

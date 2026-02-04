@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 
 from .orchestrator import generate_cv
 from .services.job_scraper import scrape_job
+from .services.job_requirements import extract_job_requirements
 
 
 APP_ROOT = Path(__file__).resolve().parent.parent
@@ -74,7 +75,8 @@ def download_head(filename: str) -> FileResponse:
 def preview(job_url: str = Form(...)) -> dict:
     try:
         job_text = scrape_job(job_url)
-        return {"job_text": job_text}
+        job_title, requirements = extract_job_requirements(job_text)
+        return {"job_title": job_title, "requirements": requirements}
     except SystemExit:
         from fastapi import HTTPException
 

@@ -15,6 +15,7 @@ from pydantic import BaseModel, AnyHttpUrl, ValidationError
 
 from .orchestrator import generate_cv
 from .services.job_scraper import scrape_job
+from .services.job_requirements import extract_job_requirements
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 WEB_ROOT = APP_ROOT / "web"
@@ -132,7 +133,8 @@ def download_head(filename: str) -> FileResponse:
 def preview(job_request: JobRequest = Depends(JobRequest.as_form)) -> dict:
     try:
         job_text = scrape_job(job_request.job_url)
-        return {"job_text": job_text}
+        job_title, requirements = extract_job_requirements(job_text)
+        return {"job_title": job_title, "requirements": requirements}
     except SystemExit:
         raise HTTPException(
             status_code=400,
