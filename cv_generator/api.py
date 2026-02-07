@@ -20,12 +20,30 @@ OUTPUT_DIR = APP_ROOT / "output"
 
 app = FastAPI(title="CV Generator API")
 
+def _assets_version() -> str:
+    assets = [
+        WEB_ROOT / "styles.css",
+        WEB_ROOT / "app.js",
+    ]
+    hasher = hashlib.sha256()
+    for asset in assets:
+        if asset.exists():
+            hasher.update(str(asset.stat().st_mtime).encode("utf-8"))
+    return hasher.hexdigest()
+
+
+def _inject_asset_version(html: str) -> str:
+    version = _assets_version()
+    html = html.replace("/assets/styles.css", f"/assets/styles.css?v={version}")
+    html = html.replace("/assets/app.js", f"/assets/app.js?v={version}")
+    return html
+
 
 @app.get("/", response_class=HTMLResponse)
 def index() -> HTMLResponse:
     index_path = WEB_ROOT / "index.html"
     html = index_path.read_text(encoding="utf-8")
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=_inject_asset_version(html))
 
 
 @app.get("/assets/{asset_name}")
